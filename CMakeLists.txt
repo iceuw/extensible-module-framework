@@ -27,15 +27,10 @@ find_package(Protobuf REQUIRED)
 find_package(Glog REQUIRED)
 find_package(Gflags REQUIRED)
 
-if (NOT PROTOBUF_FOUND)
-    message(FATAL_ERROR "can't find protobuf")
-endif (NOT PROTOBUF_FOUND)
-if (NOT GLOG_FOUND)
-    message(FATAL_ERROR "can't find glog")
-endif (NOT GLOG_FOUND)
-# link_directories("${protobuf_DIR}/lib")
-# link_directories("${glog_DIR}/lib")
-# link_directories("${gflags_DIR}/lib")
+include_directories(${Protobuf_INCLUDE_DIRS})
+#include_directories(${GLOG_INCLUDES})
+#include_directories(${GFLAGS_INCLUDES})
+
 
 include_directories(${CMAKE_SOURCE_DIR})
 

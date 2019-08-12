@@ -1,36 +1,36 @@
 #include "system.hpp"
-#include "msg_parser.hpp"
+#include "utils/msg_parser.hpp"
 //#include "proto_data_reader.hpp"
 //#include "recoder.hpp"
 
 namespace agv_robot
 {
-// void GlogInit()
-// {
-// 	google::InitGoogleLogging("");
-// #ifdef DEBUG_MODE
-// 	google::SetStderrLogging(google::GLOG_INFO); //设置级别高于 google::INFO 的日志同时输出到屏幕
-// #else
-// 	google::SetStderrLogging(google::GLOG_FATAL);//设置级别高于 google::FATAL 的日志同时输出到屏幕
-// #endif
-// 	FLAGS_colorlogtostderr = true; //设置输出到屏幕的日志显示相应颜色
-// 	//FLAGS_servitysinglelog = true;// 用来按照等级区分log文件
-// 	google::SetLogDestination(google::GLOG_FATAL, "./log/log_fatal_"); // 设置 google::FATAL 级别的日志存储路径和文件名前缀
-// 	google::SetLogDestination(google::GLOG_ERROR, "./log/log_error_"); //设置 google::ERROR 级别的日志存储路径和文件名前缀
-// 	google::SetLogDestination(google::GLOG_WARNING, "./log/log_warning_"); //设置 google::WARNING 级别的日志存储路径和文件名前缀
-// 	google::SetLogDestination(google::GLOG_INFO, "./log/log_info_"); //设置 google::INFO 级别的日志存储路径和文件名前缀
-// 	FLAGS_logbufsecs = 0; //缓冲日志输出，默认为30秒，此处改为立即输出
-// 	FLAGS_max_log_size = 100; //最大日志大小为 100MB
-// 	FLAGS_stop_logging_if_full_disk = true; //当磁盘被写满时，停止日志输出
-// 											//google::SetLogFilenameExtension("91_"); //设置文件名扩展，如平台？或其它需要区分的信息
-// 											//google::InstallFailureSignalHandler(); //捕捉 core dumped (linux)
-// 											//google::InstallFailureWriter(&Log); //默认捕捉 SIGSEGV 信号信息输出会输出到 stderr (linux)
-// }
-//vector<vector<>>
+ void GlogInit()
+ {
+ 	google::InitGoogleLogging("");
+ #ifdef DEBUG_MODE
+ 	google::SetStderrLogging(google::GLOG_INFO); //设置级别高于 google::INFO 的日志同时输出到屏幕
+ #else
+ 	google::SetStderrLogging(google::GLOG_FATAL);//设置级别高于 google::FATAL 的日志同时输出到屏幕
+ #endif
+ 	FLAGS_colorlogtostderr = true; //设置输出到屏幕的日志显示相应颜色
+ 	//FLAGS_servitysinglelog = true;// 用来按照等级区分log文件
+ 	google::SetLogDestination(google::GLOG_FATAL, "./log/log_fatal_"); // 设置 google::FATAL 级别的日志存储路径和文件名前缀
+ 	google::SetLogDestination(google::GLOG_ERROR, "./log/log_error_"); //设置 google::ERROR 级别的日志存储路径和文件名前缀
+ 	google::SetLogDestination(google::GLOG_WARNING, "./log/log_warning_"); //设置 google::WARNING 级别的日志存储路径和文件名前缀
+ 	google::SetLogDestination(google::GLOG_INFO, "./log/log_info_"); //设置 google::INFO 级别的日志存储路径和文件名前缀
+ 	FLAGS_logbufsecs = 0; //缓冲日志输出，默认为30秒，此处改为立即输出
+ 	FLAGS_max_log_size = 100; //最大日志大小为 100MB
+ 	FLAGS_stop_logging_if_full_disk = true; //当磁盘被写满时，停止日志输出
+ 											//google::SetLogFilenameExtension("91_"); //设置文件名扩展，如平台？或其它需要区分的信息
+ 											//google::InstallFailureSignalHandler(); //捕捉 core dumped (linux)
+ 											//google::InstallFailureWriter(&Log); //默认捕捉 SIGSEGV 信号信息输出会输出到 stderr (linux)
+ }
 
-System::System(ConfigFile& cfg, stdmsg::Net net_param)
+System::System(ConfigFile& cfg, stdmsg::Net net_param) : rpc_thread(this)
 {
-	//GlogInit();
+	GlogInit();
+	InitNode();
 	map<string, int> msg_name_to_idx;
 	set<string> available_msgs;
 
@@ -48,8 +48,12 @@ System::System(ConfigFile& cfg, stdmsg::Net net_param)
 		stdmsg::Block block_param = net_param.block().Get(block_id);
 		string DLL_name = block_param.dll();
 		string block_name = block_param.object();
-		shared_ptr<FunctionBlock> func = ImportBlock(DLL_name, block_name, cfg);
-		blocks_.push_back(func);
+		shared_ptr<FunctionBlock> block = ImportBlock(DLL_name, block_name, cfg);
+	
+		rpc_->add_handle(block->_rhandlertable);
+		
+
+		blocks_.push_back(block);
 		for (int input_id = 0; input_id < block_param.input_size(); ++input_id)
 		{
 			AppendInput(block_param.input_type(input_id), block_id, input_id, 
@@ -73,7 +77,21 @@ System::System(ConfigFile& cfg, stdmsg::Net net_param)
 	//AppendInput("stdmsg.Laser_Scan", 1, 0, &available_msgs, &msg_name_to_idx);
 
 	
+
 }
+
+//TODO
+//just for test
+//need to enhance robust
+void System::InitNode()
+{
+	rpc_ = new RPC();
+	rpc_->bind("tcp://*:9000");
+	rpc_->connect("tcp://192.168.1.108:9000");
+	rpc_->set("rpctest", &System::RpcTest, this);
+	rpc_thread.start();
+}
+
 void System::AppendInput(const string msg_name, const int block_id, const int input_id,
 	set<string>* available_msgs, map<string, int>* msg_name_to_index)
 {
@@ -91,6 +109,7 @@ void System::AppendInput(const string msg_name, const int block_id, const int in
 	available_msgs->erase(msg_name);
 
 }
+
 void System::AppendOutput(const string out_msg_name, const int block_id, const int output_id,
 	set<string>* available_msgs, map<string, int>* msg_name_to_index)
 {
@@ -110,7 +129,7 @@ void System::Run()
 	{
 		for (int i = 0; i < blocks_.size(); ++i)
 		{
-			blocks_[i]->update(input_msgs_[i], output_msgs_[i]);
+			blocks_[i]->Update(input_msgs_[i], output_msgs_[i]);
 		}
 	}
 }

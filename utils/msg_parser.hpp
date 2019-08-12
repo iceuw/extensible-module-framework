@@ -1,14 +1,15 @@
 #ifndef MSG_PARSER_
 #define MSG_PARSER_
 
-#ifdef __WINDOWS_
+#ifdef _WINDOWS
 #include <windows.h>
 #elif defined linux
 #include <dlfcn.h>
 #endif
 
-#include "stdmsg.pb.h"
+#include "proto/stdmsg.pb.h"
 #include "configfile.h"
+#include "node.hpp"
 
 namespace agv_robot
 {
@@ -40,14 +41,14 @@ Message* createMessage(const std::string& typeName)
 shared_ptr<FunctionBlock> ImportBlock(string DLL_name, string block_name, ConfigFile& cfg)
 {
 	typedef FunctionBlock* (CREATEBLK)(ConfigFile& cfg);
-#ifdef __WINDOWS_
+#ifdef _WINDOWS
 
 	HINSTANCE hd = ::LoadLibrary(DLL_name.c_str());
-	LOG_IF(FATAL, !hd) << "�Ҳ���" << DLL_name;
+	LOG_IF(FATAL, !hd) << "can't find DLL: " << DLL_name;
 
 	string creator_name = "Create" + block_name;
 	CREATEBLK* creator = (CREATEBLK*)::GetProcAddress(hd, creator_name.c_str());
-	LOG_IF(FATAL, !creator) << DLL_name << "�Ҳ�������" << creator_name;
+	LOG_IF(FATAL, !creator) << DLL_name << "can't find creator: " << creator_name;
 
 	return shared_ptr<FunctionBlock>((*creator)(cfg));
 
@@ -61,7 +62,6 @@ shared_ptr<FunctionBlock> ImportBlock(string DLL_name, string block_name, Config
 	return shared_ptr<FunctionBlock>((*creator)(cfg));
 #endif
 }
-
 
 } //end namespace agv_robot
 #endif

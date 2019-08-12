@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#ifdef __WINDOWS_
+#ifdef _WINDOWS
 #include <io.h>
 #endif
 
@@ -29,7 +29,7 @@ using google::protobuf::Message;
 bool ReadProtoFromTextFile(const char* filename, Message* proto)
 {
 	int fd = open(filename, O_RDONLY);
-	//CHECK_NE(fd, -1) << "File not found: " << filename;
+	CHECK_NE(fd, -1) << "File not found: " << filename;
 	FileInputStream* input = new FileInputStream(fd);
 	bool success = google::protobuf::TextFormat::Parse(input, proto);
 	delete input;
@@ -41,7 +41,7 @@ void WriteProtoToTextFile(const Message& proto, const char* filename)
 {
 	int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	FileOutputStream* output = new FileOutputStream(fd);
-	//CHECK(google::protobuf::TextFormat::Print(proto, output));
+	CHECK(google::protobuf::TextFormat::Print(proto, output));
 	delete output;
 	close(fd);
 }

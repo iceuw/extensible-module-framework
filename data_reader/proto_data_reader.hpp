@@ -19,11 +19,11 @@ private:
 
 public:
 	ProtoDataReader(ConfigFile& cfg);
-	void Backward(int nu);
+	stdmsg::String Backward(const stdmsg::Pose& pos);
 	void Forward(int nu);
 	void Accelerate(int k);
 	void Decelerate(int k);
-	void update(vector<Message*> input,
+	void Update(vector<Message*> input,
 		        vector<Message*> output);
 
 };
