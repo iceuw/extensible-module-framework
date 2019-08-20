@@ -43,7 +43,7 @@ private:
                 }
             }
         }
-    };
+    }update_thread_;
 
 	//Laser(const std::string& ip, int port);
 	void update();

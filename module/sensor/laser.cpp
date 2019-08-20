@@ -4,12 +4,15 @@
 
 namespace agv_robot{
 
-Laser::Laser(ConfigFile& cfg) : is_working_(false), seq_(0)
+Laser::Laser(ConfigFile& cfg) : is_working_(false), seq_(0), update_thread_(this)
 {
     ip_ = (std::string)cfg.value("laser", "ip", "192.168.0.1");
     port_ = cfg.value("laser", "port", 9001);
+	std::cout << "laser's ip is" << ip_ << std::endl;
+	std::cout << "laser's port is " << port_ << std::endl;
 	range_max_ = 40.0;
     this->Start();
+	this->update_thread_.start();
 }
 void Laser::Start()
 {
@@ -17,6 +20,7 @@ void Laser::Start()
         return;
     try
     {
+		std::cout << "start connect laser..." << std::endl;
         this->connect(ip_.c_str(), port_);
     }catch(int &e)
     {

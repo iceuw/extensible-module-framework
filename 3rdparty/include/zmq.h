@@ -55,10 +55,10 @@ extern "C" {
 #if defined _WIN32
 #   if defined ZMQ_STATIC
 #       define ZMQ_EXPORT
-//#   elif defined DLL_EXPORT
-//#       define ZMQ_EXPORT __declspec(dllexport)
-//#   else
-//#       define ZMQ_EXPORT __declspec(dllimport)
+#   elif defined DLL_EXPORT
+#       define ZMQ_EXPORT __declspec(dllexport)
+#   else
+#       define ZMQ_EXPORT __declspec(dllimport)
 #   endif
 #else
 #   if defined __SUNPRO_C  || defined __SUNPRO_CC

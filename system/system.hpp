@@ -5,11 +5,11 @@
 #include <memory>
 
 #include "function_block.hpp"
-#include "utils/configfile.h"
+#include "cfg_utils.hpp"
 #include "proto/stdmsg.pb.h"
 #include "glog/logging.h"
 #include "node.hpp"
-#include "thread.hpp"
+#include "thread_utils.hpp"
 
 using namespace std;
 using ::google::protobuf::Message;

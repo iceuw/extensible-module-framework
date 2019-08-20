@@ -19,6 +19,7 @@
 #endif
 
 
+namespace agv_robot{
 
 class BThread{
 private:
@@ -354,6 +355,8 @@ public:
 		//}
     }
 };
+
+}
 #endif
 
 
