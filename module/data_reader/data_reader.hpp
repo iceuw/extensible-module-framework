@@ -21,12 +21,15 @@ private:
 	int max_speed_;
 	int min_speed_;
 
+	bool play_;
+
 public:
 	DataReader(ConfigFile& cfg);
 	stdmsg::String Backward(const stdmsg::Pose& pos);
 	stdmsg::String Forward(const stdmsg::Pose& pos);
 	stdmsg::String Accelerate(const stdmsg::Pose& pos);
 	stdmsg::String Decelerate(const stdmsg::Pose& pos);
+	stdmsg::String StopAndPlay(const stdmsg::Pose& pos);
 	void Update(vector<Message*> input,
 		        vector<Message*> output);
 

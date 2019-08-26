@@ -27,7 +27,7 @@ DataReader::DataReader(ConfigFile& cfg)
 {
 	InitLog();
 	data_file_name_ = (string)cfg.value("protodatareader", "filename", "recoder200712-1104.msg");
-	max_speed_      = cfg.value("protodatareader", "max_speed", 300);
+	max_speed_      = cfg.value("protodatareader", "max_speed", 600);
 	min_speed_      = cfg.value("protodatareader", "min_speed", 25);
 
 	fstream input(data_file_name_, ios::in | ios::binary);
@@ -42,10 +42,13 @@ DataReader::DataReader(ConfigFile& cfg)
 	current_index_ = 0;
 	speed_ = 50;
 
+	play_ = true;
+
 	Set("Backward", &DataReader::Backward, this);
 	Set("Forward", &DataReader::Forward, this);
 	Set("Accelerate", &DataReader::Accelerate, this);
 	Set("Decelerate", &DataReader::Decelerate, this);
+	Set("StopAndPlay", &DataReader::StopAndPlay, this);
 }
 
 stdmsg::String DataReader::Backward(const stdmsg::Pose& pos)
@@ -103,6 +106,21 @@ stdmsg::String DataReader::Decelerate(const stdmsg::Pose& pose)
 	return str;
 }
 
+stdmsg::String DataReader::StopAndPlay(const stdmsg::Pose& pose)
+{
+	if (pose.position().x() == 1) {
+		play_ = true;
+		speed_ = 50;
+	}
+	else {
+		play_ = false;
+		speed_ = max_speed_;
+	}
+	stdmsg::String str;
+	str.set_str("OK");
+	return str;
+}
+
 void DataReader::Update(vector<Message*> input,
 	                         vector<Message*> output)
 {
@@ -110,7 +128,10 @@ void DataReader::Update(vector<Message*> input,
 	{
 		stdmsg::Laser_Scan* scan = (stdmsg::Laser_Scan*)output[0];
 		scan->CopyFrom(data_.scans().Get(current_index_));
-		current_index_++;
+		if (play_)
+		{
+			current_index_++;
+		}
 		cout << current_index_ << endl;
 		Sleep(speed_);
 	}
