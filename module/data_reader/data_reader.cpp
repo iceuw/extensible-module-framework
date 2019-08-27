@@ -37,7 +37,8 @@ DataReader::DataReader(ConfigFile& cfg)
 	{
 		LOG(FATAL) << "can't read the data file, please check if the file was encrypted or broken";
 	}
-	LOG(INFO) << "";
+
+	input.close();
 
 	current_index_ = 0;
 	speed_ = 50;
@@ -138,11 +139,23 @@ void DataReader::Update(vector<Message*> input,
 	else //current_index_ > data_.scans().size()
 	{
 		cout << "data has been run out" << endl;
-		cout << "press 'y' to replay the data or press 'n' to end the program" << endl;
-		char choice;
+		cout << "press 'y' to replay the data or press 'n' to end the program"
+			<< "or input the new filename" << endl;
+		string choice;
 		cin >> choice;
-		if (choice == 'y') current_index_ = 0;
-		if (choice == 'n') exit(0);
+		if (choice == "y") current_index_ = 0;
+		else if (choice == "n") exit(0);
+		else 
+		{
+			data_.Clear();
+			fstream input(choice, ios::in | ios::binary);
+			if (!data_.ParseFromIstream(&input))
+			{
+				LOG(FATAL) << "can't read the data file, please check if the file was encrypted or broken";
+			}
+			input.close();
+			current_index_ = 0;
+		}
 	}
 }
 
