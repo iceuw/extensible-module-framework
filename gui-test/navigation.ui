@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1147</width>
+    <height>685</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>艾吉威激光自主叉车</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="layoutDirection">
+    <enum>Qt::LeftToRight</enum>
+   </property>
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="2">
+     <widget class="laserWidget" name="laserDisplay" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>187</width>
+        <height>150</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>200</width>
+        <height>300</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" rowspan="3">
+     <widget class="GraphWidget" name="graphicsView">
+      <property name="minimumSize">
+       <size>
+        <width>400</width>
+        <height>450</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="2">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="setPos">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>300</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="acceptDrops">
+         <bool>true</bool>
+        </property>
+        <property name="autoFillBackground">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>设定初始点</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="saveMessage">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>300</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="acceptDrops">
+         <bool>true</bool>
+        </property>
+        <property name="autoFillBackground">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>开始记录数据</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="stopandplay">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>300</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="acceptDrops">
+         <bool>true</bool>
+        </property>
+        <property name="autoFillBackground">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>停止</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="forward">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>185</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>300</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>SimSun-ExtB</family>
+          <pointsize>12</pointsize>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>快进</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="backward">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>300</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">font: 12pt &quot;宋体&quot;;</string>
+        </property>
+        <property name="text">
+         <string>快退</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="accelerate">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>300</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">font: 12pt &quot;宋体&quot;;</string>
+        </property>
+        <property name="text">
+         <string>加速</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="decelerate">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>300</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">font: 12pt &quot;宋体&quot;;</string>
+        </property>
+        <property name="text">
+         <string>减速</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="SetReflectors">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>300</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">font: 12pt &quot;宋体&quot;;</string>
+        </property>
+        <property name="text">
+         <string>设置反光板</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="2">
+     <widget class="QGroupBox" name="status">
+      <property name="minimumSize">
+       <size>
+        <width>187</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>187</width>
+        <height>200</height>
+       </size>
+      </property>
+      <property name="title">
+       <string/>
+      </property>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="2" column="0">
+        <widget class="QCheckBox" name="setFocusOnRobot">
+         <property name="font">
+          <font>
+           <pointsize>14</pointsize>
+           <weight>50</weight>
+           <italic>false</italic>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>视角跟随机器人</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QCheckBox" name="setHistoryRobot">
+         <property name="font">
+          <font>
+           <pointsize>14</pointsize>
+          </font>
+         </property>
+         <property name="acceptDrops">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>显示机器人轨迹</string>
+         </property>
+         <property name="tristate">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+   <widget class="QDial" name="dial">
+    <property name="geometry">
+     <rect>
+      <x>510</x>
+      <y>480</y>
+      <width>100</width>
+      <height>100</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>100</width>
+      <height>100</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>100</width>
+      <height>100</height>
+     </size>
+    </property>
+    <property name="minimum">
+     <number>-100</number>
+    </property>
+    <property name="maximum">
+     <number>100</number>
+    </property>
+    <property name="singleStep">
+     <number>1</number>
+    </property>
+    <property name="pageStep">
+     <number>10</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+    <property name="invertedAppearance">
+     <bool>false</bool>
+    </property>
+    <property name="wrapping">
+     <bool>false</bool>
+    </property>
+    <property name="notchesVisible">
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1147</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuHost">
+    <property name="title">
+     <string>设置</string>
+    </property>
+    <addaction name="action_2"/>
+   </widget>
+   <addaction name="menuHost"/>
+  </widget>
+  <action name="action">
+   <property name="text">
+    <string>文件</string>
+   </property>
+  </action>
+  <action name="action_2">
+   <property name="text">
+    <string>地址</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>GraphWidget</class>
+   <extends>QGraphicsView</extends>
+   <header location="global">component</header>
+   <slots>
+    <slot>zoom(int)</slot>
+    <slot>enterSetPose()</slot>
+    <slot>enterSetGoal()</slot>
+    <slot>setFocusOnRobot(bool)</slot>
+    <slot>setShowHistoryRobot(bool)</slot>
+    <slot>biaod()</slot>
+    <slot>goorg()</slot>
+    <slot>goorg1()</slot>
+    <slot>goorg2()</slot>
+    <slot>requestMap()</slot>
+    <slot>SetReflector()</slot>
+    <slot>goorg3()</slot>
+    <slot>goorg4()</slot>
+    <slot>goorg5()</slot>
+    <slot>saveMessage()</slot>
+    <slot>forward()</slot>
+    <slot>backward()</slot>
+    <slot>accelerate()</slot>
+    <slot>decelerate()</slot>
+    <slot>stop_and_play()</slot>
+   </slots>
+  </customwidget>
+  <customwidget>
+   <class>laserWidget</class>
+   <extends>QWidget</extends>
+   <header>component</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>dial</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>graphicsView</receiver>
+   <slot>zoom(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>510</x>
+     <y>506</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>303</x>
+     <y>301</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>setPos</sender>
+   <signal>clicked()</signal>
+   <receiver>graphicsView</receiver>
+   <slot>enterSetPose()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1133</x>
+     <y>398</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>303</x>
+     <y>301</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_2</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>setHost()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>374</x>
+     <y>252</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>forward</sender>
+   <signal>clicked()</signal>
+   <receiver>graphicsView</receiver>
+   <slot>forward()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>982</x>
+     <y>438</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>529</x>
+     <y>365</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>SetReflectors</sender>
+   <signal>clicked()</signal>
+   <receiver>graphicsView</receiver>
+   <slot>SetReflector()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>982</x>
+     <y>672</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>323</x>
+     <y>311</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>accelerate</sender>
+   <signal>clicked()</signal>
+   <receiver>graphicsView</receiver>
+   <slot>accelerate()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>982</x>
+     <y>516</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>323</x>
+     <y>324</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>decelerate</sender>
+   <signal>clicked()</signal>
+   <receiver>graphicsView</receiver>
+   <slot>decelerate()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>982</x>
+     <y>555</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>323</x>
+     <y>324</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backward</sender>
+   <signal>clicked()</signal>
+   <receiver>graphicsView</receiver>
+   <slot>backward()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>982</x>
+     <y>477</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>323</x>
+     <y>324</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>stopandplay</sender>
+   <signal>clicked()</signal>
+   <receiver>graphicsView</receiver>
+   <slot>stop_and_play()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1042</x>
+     <y>461</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>476</x>
+     <y>355</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>saveMessage</sender>
+   <signal>clicked()</signal>
+   <receiver>graphicsView</receiver>
+   <slot>saveMessage()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1042</x>
+     <y>422</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>476</x>
+     <y>355</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>startGoal()</slot>
+  <slot>stopGoal()</slot>
+  <slot>startTopoTask()</slot>
+  <slot>setHost()</slot>
+ </slots>
+</ui>

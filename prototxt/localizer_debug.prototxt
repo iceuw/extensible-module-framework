@@ -1,0 +1,23 @@
+block {
+    name: "data_from_file"
+    output: "data1"
+    output_type: "Laser_Scan"
+    dll: "DataReader.dll"
+    object: "DataReader"
+}
+# block{
+#     name: "localizer"
+#     input: "data1"
+#     input_type: "Laser_Scan"
+#     output: "rscan"
+#     output_type: "Laser_Scan"
+#     dll: "localize.dll"
+#     object: "PFLocalizer"
+# }
+block {
+    name: "data_sender"
+    input: "data1"
+    input_type: "Laser_Scan"
+    dll: "DataSender.dll"
+    object: "DataSender"
+}
