@@ -1,0 +1,12 @@
+block {
+    name: "data_from_file"
+    output: "data"
+    dll: "ProtoDataReader.dll"
+    object: "ProtoDataReader"
+}
+block {
+    name: "data_sender"
+    input: "data"
+    dll: "Sender.dll"
+    object: "Sender"
+}

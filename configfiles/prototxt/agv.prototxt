@@ -1,0 +1,44 @@
+block {
+    name: "laser"
+    output: "laser_msg"
+    output_type: "Laser_Scan"
+    dll: "Sensor.dll"
+    object: "Laser"
+}
+
+block {
+    name: "odometry"
+
+    input: "laser_msg"
+    input_type: "Laser_Scan"
+    input: "write_msg"
+    input_type: "WriteToOdometryMsg"
+
+    output: "odom_out"
+    output_type: "Laser_Scan"
+
+    dll: "Sensor.dll"
+    object: "Odometry"
+}
+
+block{
+    name: "localizer"
+
+    input: "odom_out"
+    input_type: "Laser_Scan"
+    output: "rscan"
+    output_type: "Laser_Scan"
+    output:"write_msg"
+    output_type: "WriteToOdometryMsg"
+
+    dll: "localize.dll"
+    object: "PFLocalizer"
+}
+
+block {
+    name: "data_sender"
+    input: "rscan"
+    input_type: "Laser_Scan"
+    dll: "DataSender.dll"
+    object: "DataSender"
+}
