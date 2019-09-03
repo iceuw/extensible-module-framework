@@ -46,5 +46,5 @@ add_subdirectory(system)
 
 add_subdirectory(module/pf_localizer)
 add_subdirectory(module/data_reader)
-#add_subdirectory(module/sensor)
+add_subdirectory(module/sensor)
 #add_subdirectory(recoder)

@@ -76,6 +76,14 @@ message LaserList
 //added by zhouhang 
 //used to init function block
 
+message WriteToOdometryMsg{
+    required Pose pose = 1;
+
+    required float match = 4[default=0];
+    required string pflg = 5[default="1"];
+
+}
+
 message Block
 {
     required string name = 1;

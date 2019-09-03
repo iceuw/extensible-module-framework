@@ -8,9 +8,8 @@ CMEF use the ros and caffe framework as reference.
 
 * build the framework
 google protobuf
-zeromq
 glog
-gflgs
+gflags
 
 *build your module
 google protobuf
@@ -28,7 +27,7 @@ cmake ..
 ##How to write the module
 
 1. Confirm your input message type. Write your message in the "proto/stdmsg.proto"
-2. Write your 
+2. Write your CMakefile.
 
 You can watch the other module's code as reference.
 

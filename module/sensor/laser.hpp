@@ -1,15 +1,14 @@
 #ifndef LASER_HPP_
 #define LASER_HPP_
 
-#include "system/function_block.hpp"
+#include "function_block.hpp"
 
 #include <string>
 #include <vector>
 #include <iostream>
 
-#include "thread.hpp"
+#include "thread_utils.hpp"
 #include "net/sockets.hpp"
-#include "utils/configfile.h"
 
 namespace agv_robot{
 
@@ -28,7 +27,7 @@ class Laser : private TD::Socket, public FunctionBlock
 private:
 
     struct UpdateThread : public BThread {
-        Laser* handle;
+        Laser* handle = NULL;
         UpdateThread(Laser* p){
             handle = p;
         }

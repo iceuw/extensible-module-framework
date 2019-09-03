@@ -71,10 +71,10 @@ public:
 		return str;
 	}
 
-	void AppendInput(const string msg_name, const int block_id, const int input_id, 
-		set<string>* available_msgs, map<string, int>* msg_name_to_index);
-	void AppendOutput(const string msg_name, const int block_id, const int output_id, 
-		set<string>* available_msgs, map<string, int>* msg_name_to_index);
+	void AppendInput(const string msg_name, const string msg_type, const int block_id,
+		const int input_id, set<string>* available_msgs, map<string, int>* msg_name_to_index);
+	void AppendOutput(const string msg_name, const string msg_type, const int block_id, 
+		const int output_id, set<string>* available_msgs, map<string, int>* msg_name_to_index);
 
 	void Run();
 	~System();

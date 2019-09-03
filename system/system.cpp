@@ -49,22 +49,25 @@ System::System(ConfigFile& cfg, stdmsg::Net net_param) : rpc_thread(this)
 		string DLL_name = block_param.dll();
 		string block_name = block_param.object();
 		shared_ptr<FunctionBlock> block = ImportBlock(DLL_name, block_name, cfg);
+		blocks_.push_back(block);
 	
 		rpc_->add_handle(block->_rhandlertable);
-		
-
-		blocks_.push_back(block);
-		for (int input_id = 0; input_id < block_param.input_size(); ++input_id)
-		{
-			AppendInput(block_param.input_type(input_id), block_id, input_id, 
-				&available_msgs, &msg_name_to_idx);
-		}
 		for (int output_id = 0; output_id < block_param.output_size(); ++output_id)
 		{
-			AppendOutput(block_param.output_type(output_id), block_id, output_id, 
-				&available_msgs, &msg_name_to_idx);
+			AppendOutput(block_param.output(output_id), block_param.output_type(output_id),
+				block_id, output_id, &available_msgs, &msg_name_to_idx);
 		}
 	}	
+	for (int block_id = 0; block_id < block_size; ++block_id)
+	{
+		stdmsg::Block block_param = net_param.block().Get(block_id);
+		for (int input_id = 0; input_id < block_param.input_size(); ++input_id)
+		{
+			AppendInput(block_param.input(input_id), block_param.input_type(input_id), 
+				block_id, input_id, &available_msgs, &msg_name_to_idx);
+		}
+	}	
+
 		
 	//shared_ptr<FunctionBlock> func(new ProtoDataReader(cfg));
 	//blocks_.push_back(func);
@@ -92,13 +95,13 @@ void System::InitNode()
 	rpc_thread.start();
 }
 
-void System::AppendInput(const string msg_name, const int block_id, const int input_id,
-	set<string>* available_msgs, map<string, int>* msg_name_to_index)
+void System::AppendInput(const string msg_name, const string msg_type, const int block_id, 
+	const int input_id, set<string>* available_msgs, map<string, int>* msg_name_to_index)
 {
 	if (available_msgs->find(msg_name) == available_msgs->end())
 	{
-		//LOG(FATAL) << "找不到输入消息 ' " << msg_name << " '";
-		cout << "找不到消息" << msg_name << endl;
+		LOG(FATAL) << "找不到输入消息 ' " << msg_name << " '";
+		//cout << "找不到消息" << msg_name << endl;
 		system("pause");
 		exit(-1);
 	}
@@ -106,14 +109,13 @@ void System::AppendInput(const string msg_name, const int block_id, const int in
 
 	input_msgs_[block_id].push_back(msgs_[msg_id].get());
 	input_msg_ids_[block_id].push_back(msg_id);
-	available_msgs->erase(msg_name);
-
+	//available_msgs->erase(msg_name);
 }
 
-void System::AppendOutput(const string out_msg_name, const int block_id, const int output_id,
-	set<string>* available_msgs, map<string, int>* msg_name_to_index)
+void System::AppendOutput(const string out_msg_name, const string out_msg_type, const int block_id, 
+	const int output_id, set<string>* available_msgs, map<string, int>* msg_name_to_index)
 {
-	shared_ptr<Message> out_msg(createMessage(out_msg_name));
+	shared_ptr<Message> out_msg(createMessage(out_msg_type));
 	const int msg_id = msgs_.size();
 	msgs_.push_back(out_msg);
 	msg_names_.push_back(out_msg_name);
