@@ -44,7 +44,7 @@ add_subdirectory(module/data_sender)
 #add_subdirectory(data_reader_block)
 add_subdirectory(system)
 
-add_subdirectory(module/pf_localizer)
+add_subdirectory(module/module_pf_localizer)
 add_subdirectory(module/data_reader)
 add_subdirectory(module/sensor)
 #add_subdirectory(recoder)
