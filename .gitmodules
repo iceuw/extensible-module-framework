@@ -1,0 +1,3 @@
+[submodule "module/module_pf_localizer"]
+	path = module/module_pf_localizer
+	url = git@git.code.tencent.com:AGV-A/module_pf_localizer.git
