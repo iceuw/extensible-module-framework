@@ -18,11 +18,9 @@ gflags(optional)
 
 ## Install Method
 
-''' 
-mkdir build
-cd build
-cmake ..
-''' 
+    mkdir build
+    cd build
+    cmake ..
 
 ## How to write the module
 
