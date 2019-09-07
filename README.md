@@ -1,10 +1,10 @@
-# CPP Modular Extensible Framework(CMEF)#
+# CPP Modular Extensible Framework(CMEF)
 
 This framework is designed for robot control system.
 
 CMEF use the ros and caffe framework as reference. 
 
-## Required lib##
+## Required lib
 
 * build the framework
 google protobuf
@@ -18,11 +18,11 @@ gflags(optional)
 
 ## Install Method
 
-'''
+''' 
 mkdir build
 cd build
 cmake ..
-'''
+''' 
 
 ## How to write the module
 
