@@ -18,6 +18,7 @@ find_package(Protobuf REQUIRED)
 
 option (USE_GLOG "whether to use glog as the logger" ON)
 
+
 if(USE_GLOG)
 
     message(STATUS "will use glog")
@@ -44,7 +45,8 @@ add_subdirectory(module/data_sender)
 #add_subdirectory(data_reader_block)
 add_subdirectory(system)
 
-add_subdirectory(module/module_pf_localizer)
+##add_subdirectory(module/module_pf_localizer)
 add_subdirectory(module/data_reader)
 add_subdirectory(module/sensor)
+add_subdirectory(module/reflector_slam)
 #add_subdirectory(recoder)

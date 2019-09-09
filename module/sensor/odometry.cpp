@@ -18,7 +18,7 @@ Odometry::Odometry(ConfigFile& cfg) :
 	ConfigFile input;
 	if (!input.read("input"))
 	{
-		LOG(ERROR) << "Can't read the origin info";
+		LOG(WARNING) << "Can't read the origin info";
 	}
 	origin_x_ = (double)input.value("Origin", "x", 0);
 	origin_y_ = (double)input.value("Origin", "y", 0);

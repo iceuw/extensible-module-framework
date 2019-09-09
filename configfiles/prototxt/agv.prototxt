@@ -34,6 +34,17 @@ block{
     dll: "localize.dll"
     object: "PFLocalizer"
 }
+block{
+    name: "reflectorSLAM"
+
+    input: "rscan"
+    input_type: "Laser_Scan"
+    output: "agv_pose"
+    output_type: "Pose"
+
+    dll: "ReflectorSLAM.dll"
+    object: "ReflectorSLAM"
+}
 
 block {
     name: "data_sender"
