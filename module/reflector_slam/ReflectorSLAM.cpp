@@ -16,7 +16,7 @@ namespace agv_robot {
 		//ref_match_thre_ = cfg.value("ReflectorSLAM", "ref_match_thre");
 		ref_match_thre_ =2;
 		time_t timeTick = time(NULL);
-		strftime(file_name_, 100, "../Outlog_%Y%m%d%H%M%S.log", localtime(&timeTick));
+		strftime(file_name_, 100, "./out_log/Outlog_%Y%m%d%H%M%S.log", localtime(&timeTick));
 		string ref_mark_file = cfg.value("ReflectorSLAM", "file_ref_mark");
 		graph_size_ = 600;
 		max_dist_ = 40;
@@ -38,8 +38,7 @@ namespace agv_robot {
 		MarkInMapTran2Graph();
 		initgraph(graph_size_, graph_size_, SHOWCONSOLE);//创建图形界面
 		setlinestyle(PS_DASH | PS_ENDCAP_FLAT, 5);
-		loadimage(&img_, _T("../agv.jpg"));// 从文件加载图像
-		double time = 0;
+		loadimage(&img_, _T("./agv.jpg"));// 从文件加载图像
 		double counts = 0;
 		QueryPerformanceFrequency(&nFreq_);
 		QueryPerformanceCounter(&nBeginTime_);//开始计时 		
@@ -158,6 +157,7 @@ namespace agv_robot {
 	}
 	void ReflectorSLAM::Update(vector<Message*> input, vector<Message*> output) {	
 		is_update_ = false;
+		
 		stdmsg::Laser_Scan scan = *(stdmsg::Laser_Scan*)input[0];
 		pose_now_stdmsg_ptr_ = (stdmsg::Pose*)output[0];
 		Pose pose_ref2pf;
@@ -166,7 +166,14 @@ namespace agv_robot {
 		pose_pf.y = scan.pose().position().y();
 		pose_pf.theta = scan.pose().orentation().yaw();
 		if (!is_operating_) {
+			CancelDrawPose();
+			CancelDrawMark();
+
 			GetRefMark(scan);
+
+			MarkTran2Graph();
+			DrawMark();
+			GetTime("画出观测反光板");
 			DrawMarkInMap();
 			PoseTran2Graph();
 			DrawPose();
@@ -178,18 +185,21 @@ namespace agv_robot {
 						relative_pose_ = ComputeRelativePose(pose_pf, pose_vehicle_);
 						transformed_ = true;
 					}
-				}
-				else {
-					pose_ref2pf = TransformPose2Vehicle(relative_pose_, pose_vehicle_);
-					pose_now_stdmsg_ptr_->mutable_position()->set_x(pose_ref2pf.x);
-					pose_now_stdmsg_ptr_->mutable_position()->set_x(pose_ref2pf.y);
-					pose_now_stdmsg_ptr_->mutable_orentation()->set_yaw(pose_ref2pf.theta);
+					else {
+						pose_ref2pf = TransformPose2Vehicle(relative_pose_, pose_vehicle_);
+						cout << "反光板定位位姿转换到粒子滤波坐标系下为：(" << pose_ref2pf.x << "," << pose_ref2pf.y << "," << pose_ref2pf.theta / 3.1415926 * 180 << "°)" << endl << endl;
+						file_blog_ << "反光板定位位姿转换到粒子滤波坐标系下为：(" << pose_ref2pf.x << "," << pose_ref2pf.y << "," << pose_ref2pf.theta / 3.1415926 * 180 << "°)" << endl;
+
+						pose_now_stdmsg_ptr_->mutable_position()->set_x(pose_ref2pf.x);
+						pose_now_stdmsg_ptr_->mutable_position()->set_x(pose_ref2pf.y);
+						pose_now_stdmsg_ptr_->mutable_orentation()->set_yaw(pose_ref2pf.theta);
+					}
 				}
 			}
-			
-			CancelDrawPose();
-			CancelDrawMark();
 		}
+		cout << "粒子滤波位姿为：(" << pose_pf.x << "," << pose_pf.y << "," << pose_pf.theta / 3.1415926 * 180 << "°)" << endl;
+		file_blog_ << "粒子滤波位姿为：(" << pose_pf.x << "," << pose_pf.y << "," << pose_pf.theta / 3.1415926 * 180 << "°)" << endl;
+		file_blog_ << endl;
 		is_update_ = true;
 		return;
 	}
@@ -280,7 +290,6 @@ namespace agv_robot {
 					x_sum += ranges.Get(i)*cos(theta);
 					y_sum += ranges.Get(i)*sin(theta);
 					theta_sum += theta;
-					cout << ranges_rssi.Get(i) << endl;
 					
 				//}
 				/*else {
@@ -322,12 +331,8 @@ namespace agv_robot {
 				num_laser = 0;
 			}
 		}
-		GetTime("读取数据");
 		ref_world_ = transform(ref_curr_, pose_now_);//利用上一帧车体位姿将反光板坐标从车体坐标系转化到世界坐标系
-		MarkTran2Graph();
-		DrawMark();
-
-		GetTime("画出观测反光板");
+		GetTime("读取数据");
 		return;
 	}
 
@@ -587,7 +592,6 @@ namespace agv_robot {
 		else {
 			//cout << "当前反光板匹配数目少于3个，无法进行定位！" << endl << endl;
 			add_ref_permissed_ = false;
-			file_blog_ << endl;
 		}
 
 		GetTime("计算位姿");

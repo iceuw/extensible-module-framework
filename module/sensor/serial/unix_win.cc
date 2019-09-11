@@ -2,7 +2,6 @@
  *
  * Additional Contributors: Christopher Baker @bakercp
  */
-
 #if !defined(_WIN32)
 
 #include <stdio.h>
@@ -1063,7 +1062,7 @@ Serial::SerialImpl::open ()
                     0,
                     0,
                     OPEN_EXISTING,
-                    FILE_ATTRIBUTE_NORMAL,
+					FILE_ATTRIBUTE_NORMAL,
                     0);
 
   if (fd_ == INVALID_HANDLE_VALUE) {
@@ -1322,6 +1321,7 @@ Serial::SerialImpl::write (const uint8_t *data, size_t length)
     ss << "Error while writing to the serial port: " << GetLastError();
     THROW (IOException, ss.str().c_str());
   }
+
   return (size_t) (bytes_written);
 }
 

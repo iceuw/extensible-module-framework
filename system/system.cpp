@@ -1,5 +1,6 @@
 #include "system.hpp"
 #include "msg_parser.hpp"
+#include <windows.h>
 //#include "proto_data_reader.hpp"
 //#include "recoder.hpp"
 
@@ -127,12 +128,23 @@ void System::AppendOutput(const string out_msg_name, const string out_msg_type, 
 
 void System::Run()
 {
+	double time_;
+	LARGE_INTEGER nFreq_;//计时频率
+	LARGE_INTEGER nBeginTime_;
+	LARGE_INTEGER nEndTime_;
+	QueryPerformanceFrequency(&nFreq_);
+	QueryPerformanceCounter(&nBeginTime_);//开始计时 	
 	while (1)
 	{
 		for (int i = 0; i < blocks_.size(); ++i)
 		{
 			blocks_[i]->Update(input_msgs_[i], output_msgs_[i]);
+			QueryPerformanceCounter(&nEndTime_);//停止计时  
+			time_ = (double)(nEndTime_.QuadPart - nBeginTime_.QuadPart) / (double)nFreq_.QuadPart;//计算程序执行时间单位为s  
+			nBeginTime_ = nEndTime_;
+			cout << i << "  用时：" << time_ * 1000 << " ms" << endl;
 		}
+		cout << endl;
 	}
 }
 

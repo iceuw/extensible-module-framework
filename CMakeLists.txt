@@ -28,6 +28,7 @@ if(USE_GLOG)
 endif(USE_GLOG)
 
 
+
 include_directories(common)
 include_directories(common/proto)
 include_directories(3rdparty/include)

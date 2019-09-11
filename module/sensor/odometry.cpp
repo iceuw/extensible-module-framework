@@ -1,5 +1,6 @@
 #include "odometry.hpp"
 #include "glog/logging.h"
+#include <thread>
 
 namespace agv_robot
 {
@@ -44,24 +45,22 @@ void Odometry::OpenPort()
 	}
 }
 
-void Odometry::Write2Ser(stdmsg::WriteToOdometryMsg* write_msg)
+void Odometry::Write2Ser(stdmsg::WriteToOdometryMsg write_msg)
 {
-	float x = write_msg->pose().position().x();
-	float y = write_msg->pose().position().y();
-	float theta = write_msg->pose().orentation().yaw();
-	char pflg = write_msg->pflg()[0];
+	float x = write_msg.pose().position().x();
+	float y = write_msg.pose().position().y();
+	float theta = write_msg.pose().orentation().yaw();
+	char pflg = write_msg.pflg()[0];
 	short send_index = send_index_ + 1;
 	if (send_index >= 10000)
 		send_index_ = 0;
 
-	short match = (short)(write_msg->match() * 100);
+	short match = (short)(write_msg.match() * 100);
 
 	//×ø±ê×ª»»
 	x = (x - origin_x_)*cos(origin_theta_) + (y - origin_y_)*sin(origin_theta_);
 	y = (y - origin_y_)*cos(origin_theta_) - (x - origin_x_)*sin(origin_theta_);
 	theta = theta - origin_theta_;
-
-
 
 	if (ser_->isOpen())
 	{
@@ -98,6 +97,7 @@ void Odometry::Write2Ser(stdmsg::WriteToOdometryMsg* write_msg)
 				buffer[i] = tail[i - 20];
 			//std::cout << std::hex << (buffer[i] & 0xff) << " ";
 		}
+
 		try
 		{
 			ser_->write(buffer, 24);
@@ -191,9 +191,10 @@ void Odometry::Update(vector<Message*> input, vector<Message*> output)
 	stdmsg::WriteToOdometryMsg* write_msg = (stdmsg::WriteToOdometryMsg*)input[1];
 	stdmsg::Laser_Scan* out = (stdmsg::Laser_Scan*)output[0];
 
-	Write2Ser(write_msg);
-
+	//Write2Ser(write_msg);
+	msg_.CopyFrom(*write_msg);
 	out->CopyFrom(*laser_msg);
+
 	//lock_.lock();
 	out->mutable_robot()->mutable_position()->set_x(x_);
 	out->mutable_robot()->mutable_position()->set_y(y_);
