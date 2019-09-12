@@ -1,6 +1,6 @@
 #include "ReflectorSLAM.h"
 namespace agv_robot {
-	ReflectorSLAM::ReflectorSLAM(const ConfigFile &cfg) {
+	ReflectorSLAM::ReflectorSLAM(ConfigFile &cfg) {
 		is_update_ = false;
 		is_initialized_ = false;
 		is_operating_ = false;

@@ -275,6 +275,15 @@ void dumpValues(std::ostream& out) {
   }
 }
 
+const AutoVal& value(const std::string& section, const std::string& entry) const {
+
+  std::map<std::string,AutoVal>::const_iterator ci = 
+    m_content.find(toLower(section) + '/' + toLower(entry));
+  if (ci == m_content.end()) throw "entry does not exist";
+
+  return ci->second;
+}
+
 protected:
 std::string trim(const std::string& source, char const* delims = " \t\r\n") const {
   std::string result(source);
@@ -315,15 +324,6 @@ std::string toLower(const std::string& source) const {
 
 void insertValue(const std::string& section, const std::string& entry, const std::string& thevalue)  {
   m_content[toLower(section)+'/'+toLower(entry)]=AutoVal(thevalue);
-}
-
-const AutoVal& value(const std::string& section, const std::string& entry) const {
-
-  std::map<std::string,AutoVal>::const_iterator ci = 
-    m_content.find(toLower(section) + '/' + toLower(entry));
-  if (ci == m_content.end()) throw "entry does not exist";
-
-  return ci->second;
 }
 };
 

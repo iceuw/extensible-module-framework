@@ -7,7 +7,7 @@
 #include <vector>
 #include <windows.h>
 #include "stdmsg.pb.h"
-#include "configfile.h"
+#include "cfg_utils.hpp"
 #include "function_block.hpp"
 #include <graphics.h>
 #include <conio.h>
@@ -102,7 +102,7 @@ namespace agv_robot{
 			LARGE_INTEGER nEndTime_;
  
         public:
-            ReflectorSLAM(const ConfigFile &cfg);//构造函数
+            ReflectorSLAM(ConfigFile &cfg);//构造函数
 			void MatchRef( vector<double>& ref_match_angle,
 				             vector<Mark>& ref_match_curr,
 				           vector<Mark>& ref_match_in_map); //将当前观测到的反光板与地图中的反光板匹配

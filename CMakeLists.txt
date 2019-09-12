@@ -18,6 +18,7 @@ find_package(Protobuf REQUIRED)
 
 option (USE_GLOG "whether to use glog as the logger" ON)
 
+#SET(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/Program Files (x86)/glog/lib/cmake/glog")
 
 if(USE_GLOG)
 
@@ -41,13 +42,31 @@ aux_source_directory(${CMAKE_SOURCE_DIR}/common/proto PROTO)
 set(COMMON_SRC ${PROTO})
 
 ###please use "add_subdirectory" function to add your cmake source file
+MACRO(SUBDIRLIST result curdir)
+  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
+  SET(dirlist "")
+  FOREACH(child ${children})
+    IF(IS_DIRECTORY ${curdir}/${child})
+      LIST(APPEND dirlist ${child})
+    ENDIF()
+  ENDFOREACH()
+  SET(${result} ${dirlist})
+ENDMACRO()
 
-add_subdirectory(module/data_sender)
-#add_subdirectory(data_reader_block)
+set(MODULE ${CMAKE_SOURCE_DIR}/module)
+
+SUBDIRLIST(SUBDIRS ${MODULE})
+
+FOREACH(subdir ${SUBDIRS})
+  ADD_SUBDIRECTORY(${MODULE}/${subdir})
+ENDFOREACH()
+
+# add_subdirectory(module/data_sender)
+# #add_subdirectory(data_reader_block)
 add_subdirectory(system)
 
-##add_subdirectory(module/module_pf_localizer)
-add_subdirectory(module/data_reader)
-add_subdirectory(module/sensor)
-add_subdirectory(module/reflector_slam)
-#add_subdirectory(recoder)
+# add_subdirectory(module/module_pf_localizer)
+# add_subdirectory(module/data_reader)
+# add_subdirectory(module/sensor)
+# add_subdirectory(module/reflector_slam)
+# #add_subdirectory(recoder)
