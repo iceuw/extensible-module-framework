@@ -1,4 +1,5 @@
 #include "ReflectorSLAM.h"
+
 namespace agv_robot {
 	ReflectorSLAM::ReflectorSLAM(const ConfigFile &cfg) {
 		is_update_ = false;
