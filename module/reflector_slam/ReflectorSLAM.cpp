@@ -87,6 +87,7 @@ namespace agv_robot {
 		return str;
 	}
 
+
 	stdmsg::String ReflectorSLAM::Initialize(const stdmsg::String& a) {
 		stdmsg::String str;
 		while (1) {
