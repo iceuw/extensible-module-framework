@@ -1,11 +1,14 @@
 #include "ReflectorSLAM.h"
 namespace agv_robot {
-	ReflectorSLAM::ReflectorSLAM(ConfigFile &cfg) {
+	ReflectorSLAM::ReflectorSLAM(const ConfigFile &cfg) {
 		is_update_ = false;
 		is_initialized_ = false;
 		is_operating_ = false;
 		transformed_ = false;
+		pf_transformed_ = false;
+		is_set_frame_ =true;
 		pose_now_ = { 0,0,0 };
+		ref_radius_ = cfg.value("ReflectorSLAM", "ref_radius");
 		//num_scan_set_ = cfg.value("ReflectorSLAM", "num_scan_set");
 		install_position_.x = cfg.value("ReflectorSlAM", "lx");
 		install_position_.y = cfg.value("ReflectorSlAM", "ly");
@@ -14,17 +17,23 @@ namespace agv_robot {
 		min_rssi_thre_ = 65;
 		max_rssi_thre_ = cfg.value("ReflectorSLAM", "max_rssi_thre");
 		//ref_match_thre_ = cfg.value("ReflectorSLAM", "ref_match_thre");
-		ref_match_thre_ =2;
+		ref_match_thre_ =1.5;
+
 		time_t timeTick = time(NULL);
 		strftime(file_name_, 100, "./out_log/Outlog_%Y%m%d%H%M%S.log", localtime(&timeTick));
-		string ref_mark_file = cfg.value("ReflectorSLAM", "file_ref_mark");
+		ref_mark_file_ = cfg.value("ReflectorSLAM", "file_ref_mark");
 		graph_size_ = 600;
 		max_dist_ = 40;
+		file_pose_.open("pose_vehicle.txt", ios::out);
 		file_blog_.open(file_name_, ios::out);
-		file_ref_read_.open(ref_mark_file, ios::in);
+		file_ref_read_.open(ref_mark_file_, ios::in);
 		Set("Initialize", &ReflectorSLAM::Initialize, this);
 		Set("Trans2Current", &ReflectorSLAM::Trans2Current, this);
-
+		Set("Record", &ReflectorSLAM::Record, this);
+		Set("SetFrame", &ReflectorSLAM::SetFrame, this);
+		Set("AddRef", &ReflectorSLAM::AddRef, this);
+		Set("AddFinish", &ReflectorSLAM::AddFinish, this);
+		Set("ReadConfigureFile", &ReflectorSLAM::ReadConfigureFile, this);
 		stringstream  ss;
 		string s;
 		char punctuation;
@@ -35,6 +44,7 @@ namespace agv_robot {
 			ss >> punctuation >> x >> punctuation >> y;
 			ref_in_map_.push_back({ x,y });
 		}
+		file_ref_read_.close();
 		MarkInMapTran2Graph();
 		initgraph(graph_size_, graph_size_, SHOWCONSOLE);//创建图形界面
 		setlinestyle(PS_DASH | PS_ENDCAP_FLAT, 5);
@@ -44,19 +54,52 @@ namespace agv_robot {
 		QueryPerformanceCounter(&nBeginTime_);//开始计时 		
 	}
 
+	stdmsg::String ReflectorSLAM::Record(const stdmsg::String& a) {
+		is_operating_ = true;
+		stdmsg::String str;
+		while (1) {
+			if (is_update_) {
+				file_pose_ << "粒子滤波  " << pose_pf_new_.x << "  " << pose_pf_new_.y << "  " << pose_pf_new_.theta << endl;
+				file_pose_ << "反光板定位" << pose_vehicle_.x << "  " << pose_vehicle_.y << "  " << pose_vehicle_.theta << endl << endl;;
+				break;
+			}
+		}
+		str.set_str("Record successfully!");
+		is_operating_ = false;
+		return str;
+	}
+
+	stdmsg::String ReflectorSLAM::ReadConfigureFile(const stdmsg::String& a) {
+		is_operating_ = true;
+		stdmsg::String str;
+		while (1) {
+			if (is_update_) {
+				string cfg_name = "localization.ini";
+				ConfigFile cfg(cfg_name);
+				install_position_.x = cfg.value("ReflectorSlAM", "lx");
+				install_position_.y = cfg.value("ReflectorSlAM", "ly");
+				install_position_.theta = cfg.value("ReflectorSlAM", "ltheta");
+				break;
+			}
+		}
+		str.set_str("OK");
+		is_operating_ = false;
+		return str;
+	}
+
 	stdmsg::String ReflectorSLAM::Initialize(const stdmsg::String& a) {
 		stdmsg::String str;
 		while (1) {
 			if (is_update_) {
 				is_operating_ = true;
 				if (ref_curr_.size() >= 3) {
-					vector<double> ref_match_angle;
-					vector<Mark>  ref_match_in_map, ref_match_curr;
-					MatchRef(ref_match_angle, ref_match_curr, ref_match_in_map); //匹配反光板
-					if (ref_match_angle.size() >= 3) {
+					vector<Ray> ref_ray_match_curr;
+					vector<Mark> ref_match_in_map, ref_new_curr;
+					MatchRef(ref_ray_match_curr, ref_match_in_map, ref_new_curr); //匹配反光板
+					if (ref_ray_match_curr.size() >= 3) {
 						file_blog_ << "匹配超过3个" << endl;
-						//ComputePoseWithCeres(ref_match_angle, ref_match_in_map);
-						ComputePoseWithAngleAndDistance(ref_match_curr, ref_match_in_map);
+						ComputePoseWithCeres(ref_ray_match_curr, ref_match_in_map);
+						//ComputePoseWithAngleAndDistance(ref_match_curr, ref_match_in_map);
 						//ComputePoseWithAngle(ref_match_angle, ref_match_in_map);
 						is_initialized_ = true;
 						str.set_str("初始化成功！");
@@ -84,6 +127,7 @@ namespace agv_robot {
 		}
 		return ref;
 	}
+
 	void ReflectorSLAM::PoseTran2Graph() {
 		int ratio = graph_size_ / max_dist_;
 		pose_in_graph_.x = (pose_now_.x +max_dist_/2) * ratio;
@@ -106,6 +150,7 @@ namespace agv_robot {
 	}
 
 	void ReflectorSLAM::MarkInMapTran2Graph() {
+		ref_in_map_in_graph_.clear();
 		double x, y;
 		int ratio = graph_size_ / max_dist_;
 		for (int i = 0; i < ref_in_map_.size(); i++) {
@@ -115,9 +160,15 @@ namespace agv_robot {
 		}
 		return;
 	}
+
+	double ReflectorSLAM::ThresholdAngle(const double &theta) {
+		if (theta >= 3.1415926)    return theta - 2 * 3.1415926;
+		else if (theta < -3.1415926) return theta + 2 * 3.1515926;
+		else return theta;
+	}
 	Pose ReflectorSLAM::ComputeRelativePose(const Pose &pose1, const Pose &pose2) {
 		double x, y, theta;
-		theta = pose2.theta - pose1.theta;
+		theta = ThresholdAngle(pose1.theta - pose2.theta);
 		x = pose1.x - (pose2.x*cos(theta) - pose2.y * sin(theta));
 		y = pose1.y - (pose2.x*sin(theta) + pose2.y * cos(theta));
 		return { x,y,theta };
@@ -155,58 +206,87 @@ namespace agv_robot {
 		}
 		return;
 	}
+
+	Ray ReflectorSLAM::ComputeCircleCenter(const vector<Ray> &ref_ray) {
+		double theta = 0,range;
+
+		for (int i = 0; i < ref_ray.size(); i++) {
+			theta += ref_ray[i].theta;
+		}
+		theta /= ref_ray.size();
+		if (ref_ray.size() == 1) range = ref_ray[0].range;
+		else {
+			for (int i = 0; i < ref_ray.size(); i++) {
+				if (theta < ref_ray[i].theta) {
+					range = (ref_ray[i].range - ref_ray[i - 1].range) / (ref_ray[i].theta - ref_ray[i - 1].theta)*(theta - ref_ray[i - 1].theta) + ref_ray[i - 1].range;
+					break;
+				}
+			}
+		}
+		return { range+ref_radius_,theta };
+	}
+	
 	void ReflectorSLAM::Update(vector<Message*> input, vector<Message*> output) {	
 		is_update_ = false;
 		
 		stdmsg::Laser_Scan scan = *(stdmsg::Laser_Scan*)input[0];
 		pose_now_stdmsg_ptr_ = (stdmsg::Pose*)output[0];
 		Pose pose_ref2pf;
-		Pose pose_pf;
-		pose_pf.x = scan.pose().position().x();
-		pose_pf.y = scan.pose().position().y();
-		pose_pf.theta = scan.pose().orentation().yaw();
 		if (!is_operating_) {
+			pose_pf_.x = scan.robot().position().x();
+			pose_pf_.y = scan.robot().position().y();
+			pose_pf_.theta = scan.robot().orentation().yaw();
+
 			CancelDrawPose();
 			CancelDrawMark();
 
 			GetRefMark(scan);
-
 			MarkTran2Graph();
-			DrawMark();
-			GetTime("画出观测反光板");
-			DrawMarkInMap();
 			PoseTran2Graph();
+
+			DrawMark();
+			DrawMarkInMap();
 			DrawPose();
 			
 			if (ref_curr_.size() >= 3) {
 				if (is_initialized_) {
 					Location();
 					if (!transformed_) {
-						relative_pose_ = ComputeRelativePose(pose_pf, pose_vehicle_);
+						relative_pose_ = ComputeRelativePose(pose_pf_, pose_vehicle_);
 						transformed_ = true;
 					}
 					else {
-						pose_ref2pf = TransformPose2Vehicle(relative_pose_, pose_vehicle_);
+						cout << "可设置坐标系！" << endl;
+						pose_ref2pf = TransformPose(relative_pose_, pose_vehicle_);
 						cout << "反光板定位位姿转换到粒子滤波坐标系下为：(" << pose_ref2pf.x << "," << pose_ref2pf.y << "," << pose_ref2pf.theta / 3.1415926 * 180 << "°)" << endl << endl;
 						file_blog_ << "反光板定位位姿转换到粒子滤波坐标系下为：(" << pose_ref2pf.x << "," << pose_ref2pf.y << "," << pose_ref2pf.theta / 3.1415926 * 180 << "°)" << endl;
-
+						if (pf_transformed_) {
+							pose_pf_new_ = TransformPose(pose_pf_old2new_, pose_pf_);
+							cout << "重新设置原点后粒子滤波位姿为：" << "(" << pose_pf_new_.x << "," << pose_pf_new_.y << "," << pose_pf_new_.theta / 3.1415926 * 180 << "°)" << endl;
+							file_blog_ << "重新设置原点后粒子滤波位姿为：" << "(" << pose_pf_new_.x << "," << pose_pf_new_.y << "," << pose_pf_new_.theta / 3.1415926 * 180 << "°)" << endl;
+						}
 						pose_now_stdmsg_ptr_->mutable_position()->set_x(pose_ref2pf.x);
 						pose_now_stdmsg_ptr_->mutable_position()->set_x(pose_ref2pf.y);
 						pose_now_stdmsg_ptr_->mutable_orentation()->set_yaw(pose_ref2pf.theta);
 					}
 				}
+				else set_frame_permissed_ = true;
+			}
+			else {
+				cout << "当前观测到的反光板少于3个！" << endl;
+				set_frame_permissed_ = false;
 			}
 		}
-		cout << "粒子滤波位姿为：(" << pose_pf.x << "," << pose_pf.y << "," << pose_pf.theta / 3.1415926 * 180 << "°)" << endl;
-		file_blog_ << "粒子滤波位姿为：(" << pose_pf.x << "," << pose_pf.y << "," << pose_pf.theta / 3.1415926 * 180 << "°)" << endl;
+		cout << "粒子滤波车体位姿为：(" << pose_pf_.x << "," << pose_pf_.y << "," << pose_pf_.theta / 3.1415926 * 180 << "°)" << endl;
+		file_blog_ << "粒子滤波位姿为：(" << pose_pf_.x << "," << pose_pf_.y << "," << pose_pf_.theta / 3.1415926 * 180 << "°)" << endl;
 		file_blog_ << endl;
 		is_update_ = true;
 		return;
 	}
 
-	void ReflectorSLAM::MatchRef(vector<double>& ref_match_angle,
-		vector<Mark>& ref_match_curr,
-		vector<Mark>& ref_match_in_map) {
+	void ReflectorSLAM::MatchRef(vector<Ray>& ref_ray_match_curr,
+		vector<Mark>& ref_match_in_map,
+		vector<Mark>& ref_new_curr) {
 		bool match;
 		file_blog_ << "所有的ref_curr_为：" << endl;
 		for (int i = 0; i < ref_curr_.size(); i++) {
@@ -224,19 +304,19 @@ namespace agv_robot {
 					&& abs(ref_world_[i].y - ref_in_map_[j].y) <= ref_match_thre_) {
 
 					file_blog_ << "(" << ref_world_[i].x << "," << ref_world_[i].y << ")" << endl;
-					ref_match_angle.push_back(ref_angle_[i]);
-					ref_match_curr.push_back(ref_curr_[i]);
+					ref_ray_match_curr.push_back(ref_ray_[i]);
 					ref_match_in_map.push_back(ref_in_map_[j]);
 					match = true;
 				}
 			}
+			if (!match) ref_new_curr.push_back(ref_curr_[i]);
 		}
-		file_blog_ << "匹配的ref_match_angle为：" << endl;
-		for (int i = 0; i < ref_match_angle.size(); i++) {
-			file_blog_ << ref_match_angle[i] << endl;
+		file_blog_ << "匹配的ref_ray_match_curr为：" << endl;
+		for (int i = 0; i < ref_ray_match_curr.size(); i++) {
+			file_blog_ << "("<<ref_ray_match_curr[i].range<< ","<<ref_ray_match_curr[i].theta <<","<< endl;
 		}
 		file_blog_ << "匹配的ref_match_in_map为：" << endl;
-		for (int i = 0; i < ref_match_angle.size(); i++) {
+		for (int i = 0; i < ref_ray_match_curr.size(); i++) {
 			file_blog_ << "(" << ref_match_in_map[i].x << "," << ref_match_in_map[i].y << ")" << endl;
 		}
 		return;
@@ -268,7 +348,9 @@ namespace agv_robot {
 
 	void ReflectorSLAM::GetRefMark(const stdmsg::Laser_Scan& scan) {
 		ref_curr_.clear();
-		ref_angle_.clear();
+		ref_ray_.clear();
+		//ref_angle_.clear();
+		vector<Ray> ref_ray_temp;
 		auto ranges_rssi = scan.ranges_rssi();
 		auto ranges = scan.ranges();
 		float start_angle = scan.config().angle_min();
@@ -283,13 +365,14 @@ namespace agv_robot {
 			//cout << ranges_rssi.Get(i) << " ";
 			if (ranges_rssi.Get(i) > min_rssi_thre_ && ranges_rssi.Get(i) < max_rssi_thre_) {
 				num_laser++;
+				ref_ray_temp.push_back({ ranges.Get(i), start_angle + angle_increment * i });
 				/*if (num_laser = 1) dist_first = ranges.Get(i);*/
 				/*if (abs(ranges.Get(i) - dist_first) <= 0.4) {*/
 					//cout << ranges_rssi.Get(i) << " ";
-					theta = start_angle + angle_increment * i;
+					/*theta = start_angle + angle_increment * i;
 					x_sum += ranges.Get(i)*cos(theta);
 					y_sum += ranges.Get(i)*sin(theta);
-					theta_sum += theta;
+					theta_sum += theta;*/
 					
 				//}
 				/*else {
@@ -317,30 +400,35 @@ namespace agv_robot {
 			}
 			else {
 				if (num_laser >= 1) {
+					Ray ref_ray = ComputeCircleCenter(ref_ray_temp);
+					double x = ref_ray.range*cos(ref_ray.theta);
+					double y = ref_ray.range*sin(ref_ray.theta);
+					ref_curr_.push_back({ x, y });
+					ref_ray_.push_back(ref_ray);
 					//cout << endl;
-					x_mid = x_sum / num_laser;
+					/*x_mid = x_sum / num_laser;
 					y_mid = y_sum / num_laser;
 					theta_mid = theta_sum / num_laser;
 					Mark ref_temp = { x_mid, y_mid };
 					ref_curr_.push_back(ref_temp);
-					ref_angle_.push_back(theta_mid);
+					ref_angle_.push_back(theta_mid);*/
 				}
-				x_sum = 0;
+				/*x_sum = 0;
 				y_sum = 0;
-				theta_sum = 0;
+				theta_sum = 0;*/
+				ref_ray_temp.clear();
 				num_laser = 0;
 			}
 		}
 		ref_world_ = transform(ref_curr_, pose_now_);//利用上一帧车体位姿将反光板坐标从车体坐标系转化到世界坐标系
-		GetTime("读取数据");
 		return;
 	}
 
-	Pose ReflectorSLAM::TransformPose2Vehicle(const Pose &reference, const Pose &object) {
+	Pose ReflectorSLAM::TransformPose(const Pose &reference, const Pose &object) {
 		double x, y, theta;
-		theta = reference.theta + object.theta;
-		x = reference.x + object.x*cos(theta) + object.y*sin(theta);
-		y = reference.y - object.x*sin(theta) + object.y*cos(theta);
+		theta = ThresholdAngle(reference.theta + object.theta);
+		x = reference.x + object.x*cos(reference.theta) - object.y*sin(reference.theta);
+		y = reference.y + object.x*sin(reference.theta) + object.y*cos(reference.theta);
 		return {x,y,theta};
 	}
 
@@ -481,15 +569,7 @@ namespace agv_robot {
 			alpha1 = atan2(ref_match_in_map[i].y - pose_now_.y, ref_match_in_map[i].x - pose_now_.x);
 			alpha2 = ref_match_angle[i];
 			if (abs(alpha1) <= 3.03) {
-				if (alpha1 - alpha2 > 3.1415926) {
-					theta_all.push_back(alpha1 - alpha2 - 2 * 3.1415926);
-				}
-				else if (alpha1 - alpha2 <= -3.1415926) {
-					theta_all.push_back(alpha1 - alpha2 + 2 * 3.1415926);
-				}
-				else {
-					theta_all.push_back(alpha1 - alpha2);
-				}
+				theta_all.push_back(ThresholdAngle(alpha1 - alpha2));
 			}
 		}
 		int num = theta_all.size();
@@ -554,14 +634,14 @@ namespace agv_robot {
 		}
 	}
 
-	void ReflectorSLAM::ComputePoseWithCeres(const vector<double> &ref_match_angle, const vector<Mark> &ref_match_curr,const vector<Mark> &ref_match_in_map) {
+	void ReflectorSLAM::ComputePoseWithCeres(const vector<Ray> &ref_ray_match_curr,const vector<Mark> &ref_match_in_map) {
 		ceres::Problem location_problem;
 		double x = pose_now_.x;
 		double y = pose_now_.y;
 		double theta = pose_now_.theta;
 
-		for (int i = 0; i < ref_match_angle.size(); i++) {
-			auto cost_function = new ceres::AutoDiffCostFunction<LocalizationCost, 3, 1, 1, 1>(new LocalizationCost(ref_match_angle[i], ref_match_curr[i],ref_match_in_map[i]));
+		for (int i = 0; i < ref_ray_match_curr.size(); i++) {
+			auto cost_function = new ceres::AutoDiffCostFunction<LocalizationCost, 3, 1, 1, 1>(new LocalizationCost(ref_ray_match_curr[i],ref_match_in_map[i]));
 			location_problem.AddResidualBlock(cost_function, NULL, &x, &y, &theta);
 		}
 		ceres::Solver::Options options;
@@ -576,25 +656,28 @@ namespace agv_robot {
 		file_blog_ << "利用ceres三边定位：" << "(" << pose_now_.x << "," << pose_now_.y << "," << pose_now_.theta / 3.14 * 180 << "°)" << endl;
 		return;
 	}
-
+	
 	void ReflectorSLAM::Location() {
-		vector<Mark> ref_match_in_map, ref_match_curr;
-		vector<double> ref_match_angle;
-		MatchRef(ref_match_angle, ref_match_curr, ref_match_in_map); //匹配反光板
-		GetTime("匹配反光板");
-		if (ref_match_angle.size() >= 3) {
-			ComputePoseWithAngleAndDistance(ref_match_curr, ref_match_in_map);
-			ComputePoseWithCeres(ref_match_angle,ref_match_curr,ref_match_in_map);
-			pose_vehicle_ = TransformPose2Vehicle(install_position_, pose_now_);
+		vector<Mark> ref_match_in_map, ref_match_curr,ref_new_curr;
+		vector<Ray> ref_ray_match_curr;
+		MatchRef(ref_ray_match_curr, ref_match_in_map,ref_new_curr); //匹配反光板
+		if (ref_ray_match_curr.size() >= 3) {
+			//ComputePoseWithAngleAndDistance(ref_match_curr, ref_match_in_map);
+			ComputePoseWithCeres(ref_ray_match_curr,ref_match_in_map);
+			Pose pose_laser_vehicle0 = TransformPose(install_position_, pose_now_);
+			pose_vehicle_ = ComputeRelativePose(pose_laser_vehicle0, install_position_);
 			//ComputePoseWithAngle(ref_match_angle, ref_match_in_map);
-			cout << "AGV当前位姿：" << "(" << pose_now_.x << "," << pose_now_.y << "," << pose_now_.theta / 3.14 * 180 << "°)" << endl;
+			cout << "激光雷达位姿：" << "(" << pose_now_.x << "," << pose_now_.y << "," << pose_now_.theta / 3.14 * 180 << "°)" << endl;
+			cout << "车体位姿：" << "(" << pose_vehicle_.x << "," << pose_vehicle_.y << "," << pose_vehicle_.theta / 3.14 * 180 << "°)" << endl;
+			if (ref_new_curr.size() > 0) {
+				add_ref_permissed_ = true;
+				cout << "发现新反光板，可添加进地图！" << endl;
+			}
 		}
 		else {
-			//cout << "当前反光板匹配数目少于3个，无法进行定位！" << endl << endl;
+			cout << "当前反光板匹配数目少于3个，无法进行定位！" << endl << endl;
 			add_ref_permissed_ = false;
 		}
-
-		GetTime("计算位姿");
 		return;
 	}
 
@@ -615,33 +698,119 @@ namespace agv_robot {
 		stdmsg::String str;
 		while (1) {
 			if (is_update_) {
-				double theta = -3.1415926 + atan2(pose_now_.y, pose_now_.x) - pose_now_.theta;
-				double dist = sqrt(pose_now_.x*pose_now_.x + pose_now_.y * pose_now_.y);
-				pose_now_ = { dist*cos(theta),dist*sin(theta),-pose_now_.theta };
-
-				ref_in_map_ = transform(ref_in_map_, pose_now_);
+				CancelDrawPose();
+				CancelDrawMark();
 				CancelDrawMarkInMap();
+
+				Pose pose_relative = ComputeRelativePose({ 0,0,0 }, pose_now_);
+				pose_now_ = { 0,0,0 };
+				pose_vehicle_ = {0,0,0};
+				
+				ref_in_map_ = transform(ref_in_map_, pose_relative);
 				MarkInMapTran2Graph();
 				DrawMarkInMap();
 
-				ref_world_ = transform(ref_world_, pose_now_);
+				ref_world_ = transform(ref_curr_, pose_now_);
 				MarkTran2Graph();
 				DrawMark();
 
-				file_ref_write_.open(file_name_, ios::out);
-				for (int i = 0; i < ref_in_map_.size(); i++) {
-					file_ref_write_ << "(" << ref_in_map_[i].x << "," << ref_in_map_[i].y << ")" << endl;
-				}
-
+				pose_pf_new_ = { 0,0,0 };
+				pose_pf_old2new_ = ComputeRelativePose({0,0,0}, pose_pf_);
+				pf_transformed_ = true;
+				transformed_ = false;
+				str.set_str("Transform to Current Frame successfully!");
 				break;
 			}
 		}
-		
 		is_operating_ = false;
-		str.set_str("Transform to Current Frame successfully!");
 		return str;
 	}
 
+	stdmsg::String ReflectorSLAM::AddFinish(const stdmsg::String& a) {
+		stdmsg::String str;
+		string s;
+		char punctuation;
+		double x, y;
+		stringstream ss;
+		if (is_adding_ref_) {
+			ref_in_map_.clear();
+			file_ref_read_.open(ref_mark_file_, ios::in);
+			while (file_ref_read_.peek() != EOF) {
+				getline(file_ref_read_, s);
+				ss.str(s);
+				ss >> punctuation >> x >> punctuation >> y;
+				ref_in_map_.push_back({ x,y });
+			}
+			file_ref_read_.close();
+			MarkInMapTran2Graph();
+			str.set_str("Finish to add Reflectors!");
+			cout << "添加反光板成功！" << endl;
+		}
+		is_operating_ = false;
+		return str;
+	}
 
-	
+	stdmsg::String ReflectorSLAM::SetFrame(const stdmsg::String &a) {
+		is_operating_ = true;
+		stdmsg::String str;
+		if (set_frame_permissed_) {
+			while (1) {
+				if (is_update_) {
+					if (ref_curr_.size() >= 3) {
+						ref_in_map_ = ref_curr_;
+						MarkInMapTran2Graph();
+						file_ref_write_.open(ref_mark_file_, ios::out);
+						for (int i = 0; i < ref_in_map_.size(); i++) {
+							file_ref_write_ << "(" << ref_in_map_[i].x << "," << ref_in_map_[i].y << ")" << endl;
+						}
+						file_blog_ << "设置坐标系成功！当前ref_in_map_为：" << endl;
+						for (int i = 0; i < ref_in_map_.size(); i++) {
+							file_blog_ << "(" << ref_in_map_[i].x << "," << ref_in_map_[i].y << ")" << endl;
+						}
+						file_ref_write_.close();
+						str.set_str("Set frame successfully!");
+						cout << "Set frame successfully!" << endl;
+						is_set_frame_ = true;
+						break;
+					}
+				}
+			}
+		}
+		is_operating_ = false;
+		return str;
+	}
+
+	stdmsg::String ReflectorSLAM::AddRef(const stdmsg::String& a) {
+		is_operating_ = true;
+		stdmsg::String str;
+		if (add_ref_permissed_) {
+			while (1) {
+				if (is_update_) {
+					vector<Mark> ref_match_in_map, ref_new_curr;
+					vector<Ray> ref_ray_match_curr;
+					MatchRef(ref_ray_match_curr, ref_match_in_map, ref_new_curr);
+					if (ref_ray_match_curr.size() >= 3) {
+						ComputePoseWithCeres(ref_ray_match_curr, ref_match_in_map);
+						file_ref_write_.open(ref_mark_file_, ios::app);
+						vector<Mark> ref_in_map_new = transform(ref_new_curr, pose_now_);
+						for (int i = 0; i < ref_in_map_new.size(); i++) {
+							file_ref_write_ << "(" << ref_in_map_new[i].x << "," << ref_in_map_new[i].y << ")" << endl;
+						}
+						file_ref_write_.close();
+						str.set_str("添加成功");
+						cout << "添加成功！" << endl;
+						break;
+					}
+					else {
+						cout << "匹配的反光板数目不足3个，无法添加反光板！" << endl;
+						file_blog_ << "匹配的反光板数目不足3个，无法添加反光板！" << endl;
+						is_adding_ref_ = false;
+						break;
+					}
+				}
+			}
+		}
+		return str;
+	}
+
 }
