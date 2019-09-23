@@ -1,0 +1,9 @@
+block{
+    name: "Reflector Detctor"
+
+    input: "scan"
+    input_type: "Laser_Scan"
+
+    dll: "AGVToolKit.dll"
+    object: "ReflectorDetctor"
+}

@@ -14,6 +14,7 @@ class DataReader : public FunctionBlock
 private:
 	void InitLog();
 	string data_file_name_;
+    vector<ifstream> files;
 	stdmsg::LaserList data_;
 	int current_index_;
 	int speed_;
