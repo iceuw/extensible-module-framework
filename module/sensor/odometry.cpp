@@ -39,7 +39,8 @@ void Odometry::OpenPort()
 		catch (std::exception e)
 		{
 			LOG(ERROR) << "can't open port: " << e.what();
-			cout << e.what();
+			
+			cout<< e.what();
 			ser_ = NULL;
 		}
 	}
@@ -199,6 +200,10 @@ void Odometry::Update(vector<Message*> input, vector<Message*> output)
 	out->mutable_robot()->mutable_position()->set_x(x_);
 	out->mutable_robot()->mutable_position()->set_y(y_);
 	out->mutable_robot()->mutable_orentation()->set_yaw(theta_);
+
+	out->mutable_pose()->mutable_position()->set_x(x_);
+	out->mutable_pose()->mutable_position()->set_y(y_);
+	out->mutable_pose()->mutable_orentation()->set_yaw(theta_);
 	//lock_.unlock();
 }
 }
